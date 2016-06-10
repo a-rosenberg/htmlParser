@@ -25,7 +25,7 @@ def process_the_html(csvFile,column):
 	next(csh,None)
 	tmp = []
 	for row in csh:
-		tmp.append(row[col-1])
+		tmp.append(row[column-1])
 	newCol = [re.findall('>(.+?)<',x)[0] for x in tmp]	# a list comprehension using regex to pull everything between tags -- might want to replace this with the HTML parser you use but I didn't have it 
 	return newCol
 
