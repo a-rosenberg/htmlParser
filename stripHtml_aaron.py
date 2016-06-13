@@ -1,3 +1,5 @@
+# strip_the_html.py
+
 #import sys
 import os
 import re
@@ -8,8 +10,6 @@ import shutil
 #	print 'ERROR: incorrect number of inputs\n' + \
 #		'usage: python stripHtml.py columns csvPath '
 #		
-
-# strip_the_html.py
 
 ### VARIABLES NEEDED FOR THE process_the_data function, which uses the strip_html function of MLStripper class
 csvFile = 'messy_html.csv' # must be a csv, will be passed as a string
