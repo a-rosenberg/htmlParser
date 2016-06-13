@@ -10,7 +10,6 @@ if not len(sys.argv) > 3:
     print '\nERROR: incorrect number of inputs\nusage: python stripHTML.py inputCSV outputCSV columns\nexample: python stripHTML.py messy_html.csv stripped.csv 4 5\n'
     exit()
        
-
 ### VARIABLES NEEDED FOR THE process_the_data function, which uses the strip_html function of MLStripper class
 csvFile = sys.argv[1] # must be a csv, will be passed as a string
 output = sys.argv[2]
@@ -20,11 +19,19 @@ if not os.path.isfile(csvFile):
     print '\nERROR: input file not found \n' + \
     'usage: python stripHTML.py inputCSV outputCSV columns\n' + \
     'example: python stripHTML.py messy_html.csv stripped.csv 4 5\n'
+    exit()
 
 if not output.endswith('.csv'):
     print '\nERROR: output terms poorly contructed \n' + \
     'usage: python stripHTML.py inputCSV outputCSV columns\n' + \
     'example: python stripHTML.py messy_html.csv stripped.csv 4 5\n'
+    exit()
+    
+if max(column) > len(next(csv.reader(open(csvFile)))):
+    print '\nERROR: column does not exist \n' + \
+    'usage: python stripHTML.py inputCSV outputCSV columns\n' + \
+    'example: python stripHTML.py messy_html.csv stripped.csv 4 5\n'
+    exit()
     
 def process_the_html(csvFile,column):
 	"""
@@ -35,7 +42,7 @@ def process_the_html(csvFile,column):
 	tmp = []
 	for row in csh:
 		tmp.append(row[column-1])
-	newCol = [re.findall('>(.+?)<',x)[0] for x in tmp]	# a list comprehension using regex to pull everything between tags -- might want to replace this with the HTML parser you use but I didn't have it 
+	newCol = [' '.join(re.findall('>(.+?)<',x)) for x in tmp]	# a list comprehension using regex to pull everything between tags -- might want to replace this with the HTML parser you use but I didn't have it 
 	return newCol
 
 
