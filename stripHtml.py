@@ -1,81 +1,83 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Jun 10 13:30:29 2016
-
-@author: arosenbe
-"""
-#from html.parser import HTMLParser
-import sys
-import re
-import csv
-
-#if not len(sys.argv) == 3:
-#	print 'ERROR: incorrect number of inputs\n' + \
-#		'usage: python stripHtml.py csvPath column'
-		
-
 # strip_the_html.py
 
+import sys
+import os
+import re
+import csv
+import shutil
+
+if not len(sys.argv) > 3:
+    print '\nERROR: incorrect number of inputs\nusage: python stripHTML.py inputCSV outputCSV columns\nexample: python stripHTML.py messy_html.csv stripped.csv 4 5\n'
+    exit()
+       
+
 ### VARIABLES NEEDED FOR THE process_the_data function, which uses the strip_html function of MLStripper class
-csvFile = 'messy_html.csv' # must be a csv, will be passed as a string
-column = [4] # not sure how to pass this (as a string) to correctly index the data, see note in process_the_html function below
+csvFile = sys.argv[1] # must be a csv, will be passed as a string
+output = sys.argv[2]
+column = map(int,list(sys.argv[3:])) # not sure how to pass this (as a string) to correctly index the data, see note in process_the_html function below
 
-# This defines the function, strip_tags to strip html markdown from text
-#
-#class MLStripper(HTMLParser):
-#	def __init__(self):
-#		self.reset()
-#		self.strict = False
-#		self.convert_charrefs= True
-#		self.fed = []
-#	def handle_data(self, d):
-#		self.fed.append(d)
-#	def get_data(self):
-#		return ''.join(self.fed)
-#        
-#def strip_html(html):
-#	s = MLStripper()
-#	s.feed(html)
-#	return s.get_data()
+if not os.path.isfile(csvFile):
+    print '\nERROR: input file not found \n' + \
+    'usage: python stripHTML.py inputCSV outputCSV columns\n' + \
+    'example: python stripHTML.py messy_html.csv stripped.csv 4 5\n'
+
+if not output.endswith('.csv'):
+    print '\nERROR: output terms poorly contructed \n' + \
+    'usage: python stripHTML.py inputCSV outputCSV columns\n' + \
+    'example: python stripHTML.py messy_html.csv stripped.csv 4 5\n'
     
-# This function, process_the_data, iterates strip_tags to read each row for the data col
 def process_the_html(csvFile,column):
-	for col in column:
-		print col
-		csh = csv.reader(open(csvFile))
-		header = next(csh,None)
-		tmp = []
-		for row in csh:
-			print row
-			tmp.append(row[col-1])
-		newCol = [re.findall('>(.+?)<',x)[0] for x in tmp]	
+	"""
+	returns stripped column given csv and column number (not 0 indexed)
+	"""
+	csh = csv.reader(open(csvFile))
+	next(csh,None)
+	tmp = []
+	for row in csh:
+		tmp.append(row[column-1])
+	newCol = [re.findall('>(.+?)<',x)[0] for x in tmp]	# a list comprehension using regex to pull everything between tags -- might want to replace this with the HTML parser you use but I didn't have it 
 	return newCol
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-#	
-#	
-#	
-#	
-#	# this takes a data frame
-#	data = pd.read_csv(column)
-#	
-#	temporary_list = []
-#
-#	for i in data.index:
-#    	temporary_list = str(data['which_column -- GOES HERE, NOT SURE HOW TO INDEX THIS CORRECTLY'][i])
-#    	temporary_list = strip_html(temporary_list)
-#    	temporary_list = str.strip(temporary_list)
-#    	temporary_list.append(temporary_list)
-#
-#	data['processed_column'] = temporary_list
-#	pd.DataFrame.to_csv(data, "which_csv") # this is minor, but maybe can we append "processed" to the end of this file name?
 
-newCol = process_the_html(csvFile,column)
+
+#---------- Main Loop ----------#
+c = 0 
+for col in column:
+	"""
+	What I'm actually doing in this loop is creating a new temporary file 
+	that I append the columns onto, then call the new file and make a new one 
+	from that for every column given.  The last temporary file is then copied 
+	to the "output" file as defined above and the extra temps are deleted.
+	"""
+	if c == 0: # I did some crazy/laxy flow control on this script.  If you want it to look pretty we can condense some of this
+		tmpFile = open('XXXtmp.csv','w')
+		fid = csv.reader(open(csvFile))
+	if c > 0:
+		try:
+			tmpFile = open('XXXtmp%i.csv' % (c-1),'r')
+		except IOError:
+			tmpFile = open('XXXtmp.csv','r')
+		fid = csv.reader(tmpFile)
+		tmpFile = open('XXXtmp%i.csv' % c,'w')
+	header = next(fid,None)
+	for h in header:
+		tmpFile.write('%s, ' % h)
+	tmpFile.write('%s_stripped\n' % header[col-1])
+	newCol = process_the_html(csvFile,col)
+	for row,add in zip(fid,newCol):
+		row.append(add)
+		count = 1
+		for r in row:
+			if not count == len(row):
+				tmpFile.write('%s, ' % r)
+			else:
+				tmpFile.write('%s\n' % r)
+			count +=1
+	tmpFile.close()
+	c+=1
+
+shutil.copyfile('XXXtmp%i.csv' % (c-1),output)
+files = os.listdir('.')
+for file in files:
+    if file.startswith("XXXtmp"):
+        os.remove(file)
+	
